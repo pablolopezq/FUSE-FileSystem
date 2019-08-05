@@ -1,7 +1,6 @@
 #include "disk.h"
 
 #include <cstdio>
-//#include <cmath>
 #include <cstring>
 
 FILE * disk;
@@ -44,3 +43,27 @@ void create_disk(const char * path, int size){
 		write_block(block, i + 2);
 	}
 }
+
+void close_disk(){
+	fflush(disk);
+	fclose(disk);
+}
+
+bool write_block(char * buffer, int block){
+	
+	int offset = block * BLOCK_SIZE;
+	
+	fseek(disk, offset, SEEK_RET);
+
+	return (fwrite(buffer, 1, BLOCK_SIZE, disk) == BLOCK_SIZE);
+}
+
+bool read_block(char * buffer, int block){
+
+	int offset = block * BLOCK_SIZE;
+
+	fseek(disk, offset SEEK_RET);
+
+	return (fread(buffer, 1, BLOCK_SIZE, disk) == BLOCK_SIZE);
+}
+
