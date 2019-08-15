@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <fuse.h>
 
-void create_disk(const char * path, int size); //Size in MB
+void create_disk(const char * path);
 FILE * open_disk(const char * path);
 void close_disk();
 bool write_block(char * buffer, int block);

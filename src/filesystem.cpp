@@ -1,7 +1,8 @@
 #include "filesystem.h"
 #include "structs.h"
-#include <cstdio>
+#include <stdio.h>
 #include <cmath>
+#include <string.h>
 
 char bitmap[BLOCK_SIZE];
 File_Entry * directory;
@@ -11,7 +12,7 @@ void load_directory(){
 	int directory_size = (num_entries * 16) / BLOCK_SIZE;
 
 	for(int i = 0; i < directory_size; i++){
-		read_block(&directory[i * 4096], i + 1);
+		read_block(reinterpret_cast<char*>(&directory[i * 4096]), i + 1);
 	}
 }
 
@@ -21,9 +22,9 @@ struct File_Entry * pl_get_entry(char * path){
 	int entries_per_block = 4096 / 16;
 
 	for(int i = 0; i < directory_size; i++){
-		for(int x = o; x < entries_per_block; x++){
-			if(strcmp(path, directory[i * 4096 + x * 16]) == 0){
-				return directory[i * 4096 + x * 16];
+		for(int x = 0; x < entries_per_block; x++){
+			if(strcmp(path, directory[i * 4096 + x * 16].name) == 0){
+				return &directory[i * 4096 + x * 16];
 			}
 		}
 	}
@@ -90,48 +91,48 @@ void pl_init (struct fuse_conn_info *conn){
 	load_directory();
 }
 
-int pl_getattr (const char * path, struct stat * stat_buff){
+int pl_getattr (char * path, struct stat * stat_buff){
 
 	if (strcmp(path, "/")==0) {
-        statbuf->st_mode = S_IFDIR|0777;
-		statbuf->st_uid = 0;
-        statbuf->st_gid = 0;
-        statbuf->st_nlink = 1;
-        statbuf->st_ino = 0;
-        statbuf->st_size = BLOCK_SIZE;
-        statbuf->st_blksize = BLOCK_SIZE;
-        statbuf->st_blocks = 1;
+        stat_buff->st_mode = S_IFDIR|0777;
+		stat_buff->st_uid = 0;
+        stat_buff->st_gid = 0;
+        stat_buff->st_nlink = 1;
+        stat_buff->st_ino = 0;
+        stat_buff->st_size = BLOCK_SIZE;
+        stat_buff->st_blksize = BLOCK_SIZE;
+        stat_buff->st_blocks = 1;
     }
     else{
         struct File_Entry* entry = pl_get_entry(path);
 
-        if(entry==NULL) {
-            return -ENOENT;
+        if(entry == NULL) {
+            return -1;
         }
         
-        if(entry->is_dir) {
-            statbuf->st_mode = S_IFDIR|0777;
-            statbuf->st_uid = 0;
-            statbuf->st_gid = 0;
-            statbuf->st_nlink = 1;
-            statbuf->st_in o =0;
-            statbuf->st_size = BLOCK_SIZE;
-            statbuf->st_blksize = BLOCK_SIZE;
-            statbuf->st_blocks = 1;
+        if(entry->is_directory) {
+            stat_buff->st_mode = S_IFDIR|0777;
+            stat_buff->st_uid = 0;
+            stat_buff->st_gid = 0;
+            stat_buff->st_nlink = 1;
+            stat_buff->st_ino = 0;
+            stat_buff->st_size = BLOCK_SIZE;
+            stat_buff->st_blksize = BLOCK_SIZE;
+            stat_buff->st_blocks = 1;
         }
         else{
             int size, blocks;
 
-            pl_get_file_size(entry, &size, &blocks);
+            get_file_size(entry, &size, &blocks);
 
-            statbuf->st_mode = S_IFREG|0777;
-            statbuf->st_nlink = 1;
-            statbuf->st_ino = 0;
-            statbuf->st_uid = 0;
-            statbuf->st_gid= 0 ;
-            statbuf->st_size = size; 
-            statbuf->st_blksize = BLOCK_SIZE;
-            statbuf->st_blocks = blocks;
+            stat_buff->st_mode = S_IFREG|0777;
+            stat_buff->st_nlink = 1;
+            stat_buff->st_ino = 0;
+            stat_buff->st_uid = 0;
+            stat_buff->st_gid= 0 ;
+            stat_buff->st_size = size; 
+            stat_buff->st_blksize = BLOCK_SIZE;
+            stat_buff->st_blocks = blocks;
         }
     }
     return 0;

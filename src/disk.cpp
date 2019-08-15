@@ -58,7 +58,7 @@ void close_disk(){
 }
 
 FILE * open_disk(const char * path){
-	return (fopen(path, "+w"))
+	return (fopen(path, "+w"));
 }
 
 bool write_block(char * buffer, int block){

@@ -15,9 +15,11 @@ struct fuse_operations operations = {
 
 int main(int argc, char *argv[]){
 	
-	create_disk(argc[1]);
+	create_disk(argv[1]);
 
-	fuse_stat = fuse_main(argc, argv, &sfs_oper, NULL);
+	int fuse_stat;
+
+	fuse_stat = fuse_main(argc, argv, &fuse_operations, NULL);
 
 	close_disk();
 
