@@ -1,12 +1,17 @@
 #ifndef DISK_H
 #define DISK_H
 
-#define BLOCK_SIZE 512
+#define BLOCK_SIZE 4096
 
-void create_disk(const char * path, int size);
+#include <cstdio>
+#include <stdint.h>
+#include <fuse.h>
+
+void create_disk(const char * path, int size); //Size in MB
+FILE * open_disk(const char * path);
 void close_disk();
-void write_block(char * buffer, int block);
-void read_block(char * buffer, int block);
+bool write_block(char * buffer, int block);
+bool read_block(char * buffer, int block);
 
 
-#endif DISK_H
+#endif
