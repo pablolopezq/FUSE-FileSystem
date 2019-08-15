@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cmath>
 #include <string.h>
+#include <stdlib.h>
 
 char bitmap[BLOCK_SIZE];
 File_Entry * directory;
@@ -16,7 +17,7 @@ void load_directory(){
 	}
 }
 
-struct File_Entry * pl_get_entry(char * path){
+struct File_Entry * get_entry(const char * path){
 	int num_entries = BLOCK_SIZE * 8;
 	int directory_size = (num_entries * 16) / BLOCK_SIZE;
 	int entries_per_block = 4096 / 16;
@@ -91,7 +92,7 @@ void pl_init (struct fuse_conn_info *conn){
 	load_directory();
 }
 
-int pl_getattr (char * path, struct stat * stat_buff){
+int pl_getattr (const char * path, struct stat * stat_buff){
 
 	if (strcmp(path, "/")==0) {
         stat_buff->st_mode = S_IFDIR|0777;
@@ -104,7 +105,7 @@ int pl_getattr (char * path, struct stat * stat_buff){
         stat_buff->st_blocks = 1;
     }
     else{
-        struct File_Entry* entry = pl_get_entry(path);
+        struct File_Entry* entry = get_entry(path);
 
         if(entry == NULL) {
             return -1;
@@ -136,4 +137,38 @@ int pl_getattr (char * path, struct stat * stat_buff){
         }
     }
     return 0;
+}
+
+int pl_rmdir (const char * path){
+
+	struct File_Entry * entry = get_entry(path);
+	entry->name[0] = '\0';
+
+	if(entry == NULL)
+		return -1;
+
+	char index_block_buffer[4096];
+	read_block(index_block_buffer, entry->index_block);
+	int pointers_per_block = BLOCK_SIZE / 4;
+
+	char block_num_char[4];
+
+	for(int i = 0; i < pointers_per_block; i++){
+		memcpy(block_num_char, index_block_buffer + (16 * i), 4);
+		int block_num = atoi(block_num_char);
+		set_free_block(block_num);
+	}
+
+	return 0;
+}
+
+int pl_rename(const char * path, const char * new_name){
+
+	if(strlen(new_name) > 11)
+		return -1;
+
+	struct File_Entry * entry = get_entry(path);
+	strcpy(entry->name, new_name);
+
+	return 0;
 }
