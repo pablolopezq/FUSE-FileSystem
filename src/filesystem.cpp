@@ -172,3 +172,79 @@ int pl_rename(const char * path, const char * new_name){
 
 	return 0;
 }
+
+int pl_read(const char * path, char * buffer, size_t size, off_t offset, struct fuse_file_info * fi){
+
+	struct File_Entry * entry = get_entry(path);
+
+	char index_block_buffer[4096];
+	read_block(index_block_buffer, entry->index_block);
+
+	char block_num_char[4];
+
+	for(int i = 0; i < size; i += 4096){
+		memcpy(block_num_char, index_block_buffer + (16 * i), 4);
+		int block_num = atoi(block_num_char);
+		read_block(buffer, block_num);
+		buffer += 4096;
+	}
+
+	return 0;
+}
+
+int pl_write (const char * path, const char * buffer, size_t size, off_t offset, struct fuse_file_info * fi){
+
+	struct File_Entry * entry = get_entry(path);
+
+	char index_block_buffer[4096];
+	read_block(index_block_buffer, entry->index_block);
+	char * s_block_num;
+
+	for(int i = 0; i < size; i += 4096){
+		int block_num = get_free_block();
+		set_busy_block(block_num);
+		itoa(block_num, s_block_num, 10);
+		memcpy(s_block_num, index_block_buffer + (16 * i), 4);
+		write_block(buffer, block_num);
+		buffer += 4096;
+	}
+
+	return 0;
+}
+
+int pl_mkdir (const char * path, mode_t){
+
+	File_Entry entry;
+	memcpy(&entry.name, path, 11);
+	entry.is_directory = true;
+	entry.index_block = -1;
+
+	if(get_entry(path) == NULL){
+		memcpy(directory, &entry, sizeof(File_Entry));
+	}
+
+	return 0;
+}
+
+int pl_readdir (const char * path, void * buffer, fuse_fill_dir_t dir, off_t offset, struct fuse_file_info * fi){
+
+	struct File_Entry * entry = get_entry(path);
+
+	char index_block_buffer[4096];
+	read_block(index_block_buffer, entry->index_block);
+	int pointers_per_block = BLOCK_SIZE / 4;
+
+	char block_num_char[4];
+
+	char * c_buffer = reinterpret_cast<char*>(buffer);
+
+	for(int i = 0; i < pointers_per_block; i++){
+		memcpy(block_num_char, index_block_buffer + (16 * i), 4);
+		int block_num = atoi(block_num_char);
+		read_block(c_buffer, block_num);
+		buffer += 4096;
+	}
+
+	return 0;
+
+}

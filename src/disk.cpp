@@ -61,7 +61,7 @@ FILE * open_disk(const char * path){
 	return (fopen(path, "+w"));
 }
 
-bool write_block(char * buffer, int block){
+bool write_block(const char * buffer, int block){
 	
 	int offset = block * BLOCK_SIZE;
 	
